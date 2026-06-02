@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>whatidid — AI work digest for developers</title>
+<meta name="description" content="Cross-agent AI work digest. Reads sessions from Hermes, Codex, Claude Code, Copilot CLI, and Continue. Outputs a value report with effort estimates and ROI.">
+<style>
+  :root {
+    --bg: #0d0d10;
+    --surface: #16161a;
+    --border: #2a2a35;
+    --accent: #7c6aff;
+    --accent2: #4ade80;
+    --text: #e8e8f0;
+    --muted: #7a7a9a;
+    --code-bg: #1a1a22;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.6;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(13,13,16,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 56px;
+  }
+  .nav-logo { font-weight: 700; font-size: 1.1rem; color: var(--text); text-decoration: none; }
+  .nav-logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 1.5rem; }
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color .2s; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    background: var(--accent); color: #fff;
+    padding: 0.4rem 1rem; border-radius: 6px;
+    font-size: 0.85rem; font-weight: 600; text-decoration: none;
+    transition: opacity .2s;
+  }
+  .nav-cta:hover { opacity: 0.85; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 7rem 2rem 4rem;
+  }
+  .badge {
+    display: inline-block; background: rgba(124,106,255,0.15);
+    color: var(--accent); border: 1px solid rgba(124,106,255,0.3);
+    padding: 0.3rem 0.8rem; border-radius: 20px;
+    font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em;
+    margin-bottom: 1.5rem; text-transform: uppercase;
+  }
+  h1 {
+    font-size: clamp(2.4rem, 6vw, 4.2rem);
+    font-weight: 800; letter-spacing: -0.03em; line-height: 1.1;
+    margin-bottom: 1.25rem;
+  }
+  h1 .highlight { color: var(--accent); }
+  .hero-sub {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    color: var(--muted); max-width: 560px; margin: 0 auto 2.5rem;
+  }
+  .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+  .btn-primary {
+    background: var(--accent); color: #fff;
+    padding: 0.75rem 1.75rem; border-radius: 8px;
+    font-weight: 700; font-size: 1rem; text-decoration: none;
+    transition: opacity .2s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-ghost {
+    background: transparent; color: var(--text);
+    padding: 0.75rem 1.75rem; border-radius: 8px;
+    font-weight: 600; font-size: 1rem; text-decoration: none;
+    border: 1px solid var(--border); transition: border-color .2s;
+  }
+  .btn-ghost:hover { border-color: var(--accent); }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 2.5rem;
+    margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);
+    width: 100%; max-width: 700px;
+  }
+  .stat { text-align: center; }
+  .stat-value { font-size: 1.8rem; font-weight: 800; color: var(--accent2); }
+  .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+
+  /* SECTION */
+  section { padding: 5rem 2rem; max-width: 1100px; margin: 0 auto; }
+  h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1rem; }
+  .section-sub { color: var(--muted); font-size: 1.05rem; margin-bottom: 3rem; max-width: 540px; }
+
+  /* FEATURE GRID */
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
+  .feature-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem;
+    transition: border-color .2s;
+  }
+  .feature-card:hover { border-color: var(--accent); }
+  .feature-icon { font-size: 1.6rem; margin-bottom: 0.75rem; }
+  .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .feature-card p { font-size: 0.9rem; color: var(--muted); }
+
+  /* SOURCE TABLE */
+  .source-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+  .source-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.25rem;
+    display: flex; align-items: flex-start; gap: 0.75rem;
+  }
+  .source-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent2); margin-top: 5px; flex-shrink: 0; }
+  .source-name { font-weight: 600; font-size: 0.95rem; }
+  .source-path { font-size: 0.75rem; color: var(--muted); font-family: monospace; margin-top: 0.2rem; }
+
+  /* TERMINAL DEMO */
+  .terminal {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden; max-width: 720px; margin: 0 auto;
+  }
+  .terminal-bar {
+    background: #222230; padding: 0.6rem 1rem;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-r { background: #ff5f56; }
+  .dot-y { background: #ffbd2e; }
+  .dot-g { background: #27c93f; }
+  .terminal-body { padding: 1.5rem; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.875rem; line-height: 1.8; }
+  .t-cmd { color: var(--accent2); }
+  .t-kw { color: var(--accent); }
+  .t-val { color: #ffd700; }
+  .t-muted { color: var(--muted); }
+  .t-green { color: var(--accent2); }
+
+  /* INSTALL */
+  .install-box {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem 1.5rem;
+    font-family: monospace; font-size: 1rem;
+    display: flex; align-items: center; gap: 1rem;
+    max-width: 460px;
+  }
+  .install-box .prompt { color: var(--muted); }
+  .install-box .cmd { color: var(--accent2); }
+  .copy-btn {
+    margin-left: auto; background: none; border: 1px solid var(--border);
+    color: var(--muted); padding: 0.3rem 0.6rem; border-radius: 6px;
+    cursor: pointer; font-size: 0.75rem; transition: all .2s;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--text); }
+
+  /* PRICING */
+  .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; }
+  .pricing-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 2rem;
+  }
+  .pricing-card.featured { border-color: var(--accent); }
+  .plan-name { font-size: 0.85rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .plan-price { font-size: 2.5rem; font-weight: 800; margin: 0.5rem 0; }
+  .plan-price span { font-size: 1rem; font-weight: 400; color: var(--muted); }
+  .plan-desc { font-size: 0.875rem; color: var(--muted); margin-bottom: 1.5rem; }
+  .plan-features { list-style: none; }
+  .plan-features li { font-size: 0.875rem; padding: 0.3rem 0; }
+  .plan-features li::before { content: "✓ "; color: var(--accent2); font-weight: 700; }
+
+  /* CTA SECTION */
+  .cta-section {
+    text-align: center; padding: 6rem 2rem;
+    background: linear-gradient(135deg, rgba(124,106,255,0.08) 0%, transparent 60%);
+    border-top: 1px solid var(--border);
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem; text-align: center;
+    color: var(--muted); font-size: 0.85rem;
+  }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--text); }
+
+  @media (max-width: 600px) {
+    .nav-links { display: none; }
+    .stats-bar { gap: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#"><span>what</span>idid</a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#sources">Sources</a>
+    <a href="#install">Install</a>
+    <a href="#pricing">Pricing</a>
+  </div>
+  <a class="nav-cta" href="https://github.com/th0mps0nty/whatidid">GitHub →</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">Open Source · MIT License</div>
+  <h1>Know the <span class="highlight">value</span><br>of every AI session</h1>
+  <p class="hero-sub">
+    Cross-agent work digest for developers. Reads every local AI tool you use
+    and outputs a business-ready value report in seconds.
+  </p>
+  <div class="hero-actions">
+    <a class="btn-primary" href="#install">Install free →</a>
+    <a class="btn-ghost" href="https://github.com/th0mps0nty/whatidid">View on GitHub</a>
+  </div>
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-value">5+</div>
+      <div class="stat-label">AI tools supported</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">1300×</div>
+      <div class="stat-label">typical value multiple</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">0</div>
+      <div class="stat-label">secrets ever read</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">3</div>
+      <div class="stat-label">output formats</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <h2>Everything your AI tools built — in one report</h2>
+  <p class="section-sub">whatidid is read-only, local-first, and credential-safe. It never touches your tokens, keys, or passwords.</p>
+  <div class="features">
+    <div class="feature-card">
+      <div class="feature-icon">🔍</div>
+      <h3>Cross-agent coverage</h3>
+      <p>Reads Hermes, OpenAI Codex CLI, Claude Code, GitHub Copilot CLI, and Continue — all in one pass.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💰</div>
+      <h3>Value estimation</h3>
+      <p>Converts session data into estimated human-equivalent hours and dollar value. Show your team what AI is actually worth.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>HTML + Markdown + JSON</h3>
+      <p>Self-contained HTML report with a Linear-inspired design. Also outputs structured JSON for dashboards and CI pipelines.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <h3>Credential-safe</h3>
+      <p>Hardcoded redaction of API keys, tokens, passwords, and private key patterns before any text hits the report.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🗂️</div>
+      <h3>Project grouping</h3>
+      <p>Sessions are normalized to your actual repos and projects. Work is grouped into human-readable workstreams.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>GitHub Action ready</h3>
+      <p>Drop the included action into any repo for automatic weekly digests uploaded as build artifacts.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO TERMINAL -->
+<section id="demo" style="padding-top:0">
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-cmd">$</span> <span class="t-green">whatidid</span> <span class="t-kw">--days</span> <span class="t-val">30</span></div>
+      <div class="t-muted">Scanning Hermes sessions... 15 found</div>
+      <div class="t-muted">Scanning Codex sessions... 68 found</div>
+      <div class="t-muted">Scanning Claude Code... 8 found</div>
+      <div class="t-muted">Scanning Copilot CLI... 1 found</div>
+      <div class="t-muted">Scanning Continue... 1 found</div>
+      <div>&nbsp;</div>
+      <div><span class="t-kw">Sessions    </span> <span class="t-val">93</span></div>
+      <div><span class="t-kw">Projects    </span> <span class="t-val">9</span></div>
+      <div><span class="t-kw">Est. hours  </span> <span class="t-val">169.25</span></div>
+      <div><span class="t-kw">Value       </span> <span class="t-green">$21,156</span></div>
+      <div><span class="t-kw">AI cost     </span> <span class="t-val">$16.05</span></div>
+      <div><span class="t-kw">Multiple    </span> <span class="t-green">1318×</span></div>
+      <div><span class="t-kw">Confidence  </span> <span class="t-val">medium (0.72)</span></div>
+      <div>&nbsp;</div>
+      <div class="t-green">✓ Report → ~/whatidid-reports/AI_WORK_DIGEST_LATEST.html</div>
+    </div>
+  </div>
+</section>
+
+<!-- SOURCES -->
+<section id="sources">
+  <h2>Works with every local AI tool</h2>
+  <p class="section-sub">Reads native session stores directly. No API calls, no cloud sync, no accounts.</p>
+  <div class="source-grid">
+    <div class="source-card">
+      <div class="source-dot"></div>
+      <div>
+        <div class="source-name">Hermes Agent</div>
+        <div class="source-path">~/.hermes/sessions.db</div>
+      </div>
+    </div>
+    <div class="source-card">
+      <div class="source-dot"></div>
+      <div>
+        <div class="source-name">OpenAI Codex CLI</div>
+        <div class="source-path">~/.codex/</div>
+      </div>
+    </div>
+    <div class="source-card">
+      <div class="source-dot"></div>
+      <div>
+        <div class="source-name">Claude Code</div>
+        <div class="source-path">~/.claude/projects/</div>
+      </div>
+    </div>
+    <div class="source-card">
+      <div class="source-dot"></div>
+      <div>
+        <div class="source-name">GitHub Copilot CLI</div>
+        <div class="source-path">~/.config/github-copilot/</div>
+      </div>
+    </div>
+    <div class="source-card">
+      <div class="source-dot"></div>
+      <div>
+        <div class="source-name">Continue</div>
+        <div class="source-path">~/.continue/</div>
+      </div>
+    </div>
+    <div class="source-card" style="border-style:dashed; opacity:0.6">
+      <div class="source-dot" style="background:var(--muted)"></div>
+      <div>
+        <div class="source-name">More coming</div>
+        <div class="source-path">Cursor, Windsurf, Aider...</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALL -->
+<section id="install">
+  <h2>Get started in 30 seconds</h2>
+  <p class="section-sub">Install from PyPI, run against your last 7 days, open the report.</p>
+
+  <div style="display:flex;flex-direction:column;gap:1rem;max-width:500px">
+    <div class="install-box">
+      <span class="prompt">$</span>
+      <span class="cmd">pip install whatidid</span>
+      <button class="copy-btn" onclick="navigator.clipboard.writeText('pip install whatidid')">copy</button>
+    </div>
+    <div class="install-box">
+      <span class="prompt">$</span>
+      <span class="cmd">whatidid --days 7</span>
+      <button class="copy-btn" onclick="navigator.clipboard.writeText('whatidid --days 7')">copy</button>
+    </div>
+  </div>
+
+  <div style="margin-top:2.5rem">
+    <h3 style="font-size:1rem;margin-bottom:0.75rem;color:var(--muted)">Or use the GitHub Action</h3>
+    <div class="terminal" style="max-width:560px">
+      <div class="terminal-bar">
+        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      </div>
+      <div class="terminal-body" style="font-size:0.8rem">
+        <div class="t-muted"># .github/workflows/whatidid.yml</div>
+        <div><span class="t-kw">uses</span>: th0mps0nty/whatidid/action@v1</div>
+        <div><span class="t-kw">with</span>:</div>
+        <div>&nbsp;&nbsp;<span class="t-kw">days</span>: <span class="t-val">'7'</span></div>
+        <div>&nbsp;&nbsp;<span class="t-kw">hourly-rate</span>: <span class="t-val">'125'</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <h2>Simple, honest pricing</h2>
+  <p class="section-sub">The core tool is free forever. A hosted cloud version is on the roadmap.</p>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="plan-name">Open Source</div>
+      <div class="plan-price">Free <span>forever</span></div>
+      <div class="plan-desc">Self-hosted, local-only, MIT license.</div>
+      <ul class="plan-features">
+        <li>All 5+ agent sources</li>
+        <li>HTML + MD + JSON reports</li>
+        <li>GitHub Action included</li>
+        <li>Unlimited sessions</li>
+        <li>Community support</li>
+      </ul>
+    </div>
+    <div class="pricing-card featured">
+      <div class="plan-name">Cloud <span style="color:var(--accent);font-size:0.7rem;margin-left:0.3rem">COMING SOON</span></div>
+      <div class="plan-price">$9 <span>/ month</span></div>
+      <div class="plan-desc">Hosted dashboard, team sharing, weekly email digests.</div>
+      <ul class="plan-features">
+        <li>Everything in Open Source</li>
+        <li>Web dashboard</li>
+        <li>Team sharing &amp; comments</li>
+        <li>Automated weekly email</li>
+        <li>Priority support</li>
+      </ul>
+    </div>
+    <div class="pricing-card">
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-price">Custom</div>
+      <div class="plan-desc">On-prem, SSO, custom integrations, SLA.</div>
+      <ul class="plan-features">
+        <li>Self-hosted or private cloud</li>
+        <li>SSO / SAML</li>
+        <li>Custom source adapters</li>
+        <li>Dedicated support</li>
+        <li>Custom SLA</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section">
+  <h2 style="font-size:clamp(1.8rem,5vw,3rem);margin-bottom:1rem">Start knowing what you built.</h2>
+  <p style="color:var(--muted);margin-bottom:2rem;font-size:1.1rem">Free, open source, installs in 10 seconds.</p>
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+    <a class="btn-primary" href="https://github.com/th0mps0nty/whatidid">View on GitHub →</a>
+    <a class="btn-ghost" href="#install">Install now</a>
+  </div>
+</div>
+
+<footer>
+  <p>
+    <strong>whatidid</strong> &nbsp;·&nbsp;
+    <a href="https://github.com/th0mps0nty/whatidid">GitHub</a> &nbsp;·&nbsp;
+    MIT License &nbsp;·&nbsp; Built by Tyler Thompson
+  </p>
+</footer>
+
+</body>
+</html>
