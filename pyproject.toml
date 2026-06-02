@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "whatidid"
+name = "whatidid2"
 version = "1.0.0"
 description = "Cross-agent AI work digest — reads sessions from Hermes, Codex, Claude Code, Copilot CLI, and more. Outputs value reports with effort estimates and ROI."
 readme = "README.md"

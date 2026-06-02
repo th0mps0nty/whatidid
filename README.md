@@ -21,7 +21,7 @@ Inspired by the [What-I-Did-Copilot](https://github.com/microsoft/What-I-Did-Cop
 ## Quick start
 
 ```bash
-pip install whatidid
+pip install whatidid2
 whatidid --days 7
 # → ~/whatidid-reports/AI_WORK_DIGEST_LATEST.html
 ```
