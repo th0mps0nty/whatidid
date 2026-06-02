@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "whatidid2"
-version = "1.0.0"
+version = "1.0.1"
 description = "Cross-agent AI work digest — reads sessions from Hermes, Codex, Claude Code, Copilot CLI, and more. Outputs value reports with effort estimates and ROI."
 readme = "README.md"
 license = "MIT"

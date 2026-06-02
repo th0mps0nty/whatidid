@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 HOME = Path.home()
-REPORT_DIR = HOME / "HermesOps" / "knowledge" / "reports"
+REPORT_DIR = Path(os.environ["WHATIDID_REPORT_DIR"]) if "WHATIDID_REPORT_DIR" in os.environ else Path.home() / "whatidid-reports"
 
 SECRET_PATTERNS = [
     re.compile(r"(?i)(api[_-]?key|token|secret|password|passwd|bearer)\s*[:=]\s*['\"]?[^\s'\"]{8,}"),
