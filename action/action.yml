@@ -1,0 +1,59 @@
+name: 'whatidid — AI work digest'
+description: 'Generate a cross-agent AI work digest (Hermes, Codex, Claude Code, Copilot CLI, Continue) and upload the HTML value report as a build artifact.'
+author: 'Tyler Thompson'
+branding:
+  icon: 'bar-chart-2'
+  color: 'purple'
+
+inputs:
+  days:
+    description: 'How many days to look back'
+    required: false
+    default: '7'
+  max-sessions:
+    description: 'Max sessions to process'
+    required: false
+    default: '200'
+  hourly-rate:
+    description: 'Blended hourly rate for value estimation'
+    required: false
+    default: '125'
+  upload-artifact:
+    description: 'Upload the HTML report as a GitHub artifact (true/false)'
+    required: false
+    default: 'true'
+
+outputs:
+  report-html:
+    description: 'Path to generated HTML report'
+    value: ${{ steps.run.outputs.report-html }}
+  report-md:
+    description: 'Path to generated Markdown report'
+    value: ${{ steps.run.outputs.report-md }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install whatidid
+      shell: bash
+      run: pip install whatidid --quiet
+
+    - name: Run digest
+      id: run
+      shell: bash
+      run: |
+        mkdir -p ~/whatidid-reports
+        whatidid --days ${{ inputs.days }} \
+                 --max-sessions ${{ inputs.max-sessions }} \
+                 --hourly-rate ${{ inputs.hourly-rate }} \
+                 --output-dir ~/whatidid-reports
+        echo "report-html=$(ls ~/whatidid-reports/AI_WORK_DIGEST_LATEST.html 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+        echo "report-md=$(ls ~/whatidid-reports/AI_WORK_DIGEST_LATEST.md 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+
+    - name: Upload report artifact
+      if: inputs.upload-artifact == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ai-work-digest
+        path: ~/whatidid-reports/
+        retention-days: 30

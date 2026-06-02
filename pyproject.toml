@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "whatidid"
+version = "1.0.0"
+description = "Cross-agent AI work digest — reads sessions from Hermes, Codex, Claude Code, Copilot CLI, and more. Outputs value reports with effort estimates and ROI."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+keywords = ["ai", "copilot", "codex", "claude", "productivity", "developer-tools", "reporting"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Utilities",
+]
+
+[project.scripts]
+whatidid = "whatidid.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/th0mps0nty/whatidid"
+Repository = "https://github.com/th0mps0nty/whatidid"
+Issues = "https://github.com/th0mps0nty/whatidid/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]

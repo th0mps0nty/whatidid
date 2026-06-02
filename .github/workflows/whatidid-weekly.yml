@@ -1,0 +1,23 @@
+name: Weekly AI work digest
+
+on:
+  schedule:
+    - cron: '0 8 * * MON'   # Every Monday at 8am UTC
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Days to look back'
+        default: '7'
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run whatidid
+        uses: th0mps0nty/whatidid/action@v1
+        with:
+          days: ${{ github.event.inputs.days || '7' }}
+          hourly-rate: '125'
+          upload-artifact: 'true'
