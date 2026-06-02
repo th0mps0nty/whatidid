@@ -11,3 +11,7 @@ venv/
 *.db
 *.sqlite
 whatidid-reports/
+
+.build-env/
+dist/
+*.egg-info/
